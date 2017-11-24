@@ -44,7 +44,7 @@ class OfferInfo:
                f" for {self._format_amount(self.buy_how_much)} [{self.buy_which_token}] (owner: {self.owner})"
 
 
-parser = argparse.ArgumentParser(prog='oasis-dump')
+parser = argparse.ArgumentParser(prog='oasis-dump.py')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
 parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
 parser.add_argument("contract", help="Ethereum address of the OasisDEX smart contract", type=str)
