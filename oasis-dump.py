@@ -16,11 +16,28 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import argparse
+import datetime
 import json
-from typing import Optional, List
+from typing import Optional
 
 import pkg_resources
 from web3 import Web3, HTTPProvider
+
+
+def format_amount(value: int):
+    tmp = str(value).zfill(19)
+    return (tmp[0:len(tmp)-18] + "." + tmp[len(tmp)-18:len(tmp)]).replace("-.", "-0.")
+
+
+def bytes_to_int(value) -> int:
+    if isinstance(value, bytes) or isinstance(value, bytearray):
+        return int.from_bytes(value, byteorder='big')
+    elif isinstance(value, str):
+        b = bytearray()
+        b.extend(map(ord, value))
+        return int.from_bytes(b, byteorder='big')
+    else:
+        raise AssertionError
 
 
 class OfferInfo:
@@ -34,14 +51,27 @@ class OfferInfo:
         self.owner = owner
         self.timestamp = timestamp
 
-    @staticmethod
-    def _format_amount(value: int):
-        tmp = str(value).zfill(19)
-        return (tmp[0:len(tmp)-18] + "." + tmp[len(tmp)-18:len(tmp)]).replace("-.", "-0.")
+    def __str__(self):
+        return f"Offer #{self.offer_id}: {format_amount(self.sell_how_much)} [{self.sell_which_token}]" \
+               f" for {format_amount(self.buy_how_much)} [{self.buy_which_token}] (owner: {self.owner})"
+
+
+class LogTake:
+    def __init__(self, tx_hash, args):
+        self.tx_hash = tx_hash
+        self.offer_id = bytes_to_int(args['id'])
+        self.maker = args['maker']
+        self.taker = args['taker']
+        self.pay_token = args['pay_gem']
+        self.take_amount = args['take_amt']
+        self.buy_token = args['buy_gem']
+        self.give_amount = args['give_amt']
+        self.timestamp = args['timestamp']
 
     def __str__(self):
-        return f"Offer #{self.offer_id}: {self._format_amount(self.sell_how_much)} [{self.sell_which_token}]" \
-               f" for {self._format_amount(self.buy_how_much)} [{self.buy_which_token}] (owner: {self.owner})"
+        return f"Trade {self.tx_hash}: {format_amount(self.take_amount)} [{self.pay_token}]" \
+               f" for {format_amount(self.give_amount)} [{self.buy_token}] (maker: {self.maker}, taker: {self.taker}," \
+               f" timestamp: {datetime.datetime.fromtimestamp(self.timestamp).isoformat()})"
 
 
 parser = argparse.ArgumentParser(prog='oasis-dump.py')
@@ -58,6 +88,7 @@ arguments = parser.parse_args()
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://{arguments.rpc_host}:{arguments.rpc_port}"))
 abi = json.loads(pkg_resources.resource_string(__name__, 'SimpleMarket.abi'))
 contract = web3.eth.contract(abi=abi)(address=arguments.contract)
+
 
 def get_offer(offer_id: int) -> Optional[OfferInfo]:
     array = contract.call().offers(offer_id)
@@ -79,9 +110,20 @@ def print_orders():
         print(offer)
 
 
+def print_trades():
+    events = []
+
+    def callback(log):
+        events.append(LogTake(log['transactionHash'], log['args']))
+
+    contract.pastEvents('LogTake', {'fromBlock': 0, 'toBlock': contract.web3.eth.blockNumber}, callback).join()
+    for event in events:
+        print(event)
+
+
 if arguments.orders:
     print_orders()
 
-# if arguments.trades:
-#     print_trades()
+if arguments.trades:
+    print_trades()
 
