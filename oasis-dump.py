@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 #
-# This file is part of `oasis-dump`.
-#
 # Copyright (C) 2017 reverendus
 #
 # This program is free software: you can redistribute it and/or modify
