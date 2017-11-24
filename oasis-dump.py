@@ -18,7 +18,6 @@
 import argparse
 import datetime
 import json
-from typing import Optional
 
 import pkg_resources
 from web3 import Web3, HTTPProvider
@@ -90,7 +89,7 @@ abi = json.loads(pkg_resources.resource_string(__name__, 'SimpleMarket.abi'))
 contract = web3.eth.contract(abi=abi)(address=arguments.contract)
 
 
-def get_offer(offer_id: int) -> Optional[OfferInfo]:
+def get_offer(offer_id: int):
     array = contract.call().offers(offer_id)
     if array[5] is not True:
         return None
