@@ -50,8 +50,8 @@ parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", defaul
 parser.add_argument("contract", help="Ethereum address of the OasisDEX smart contract", type=str)
 
 group = parser.add_mutually_exclusive_group(required=True)
-group.add_argument('--orders',action='store_true',help='Compare two packages.')
-group.add_argument('--trades',action='store_true',help='Verify Content of package.')
+group.add_argument('--orders',action='store_true',help='Dumps the current state of the OasisDEX orderbook')
+group.add_argument('--trades',action='store_true',help='Dumps all historical trades from the OasisDEC contract')
 
 arguments = parser.parse_args()
 
