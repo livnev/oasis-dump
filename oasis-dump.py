@@ -111,11 +111,9 @@ def print_orders():
 
 def print_trades():
     events = []
+    contract.pastEvents('LogTake', {'fromBlock': 0, 'toBlock': contract.web3.eth.blockNumber},
+                        lambda log: events.append(LogTake(log['transactionHash'], log['args']))).join()
 
-    def callback(log):
-        events.append(LogTake(log['transactionHash'], log['args']))
-
-    contract.pastEvents('LogTake', {'fromBlock': 0, 'toBlock': contract.web3.eth.blockNumber}, callback).join()
     for event in events:
         print(event)
 
