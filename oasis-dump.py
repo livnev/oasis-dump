@@ -15,8 +15,8 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-DAI_ADDR = '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359'
-WETH_ADDR = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+DAI_ADDR = '0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'
+WETH_ADDR = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 
 import argparse
 import datetime
@@ -78,10 +78,10 @@ class LogTake:
     def trade_str(self, direction):
         # direction == 'buy' or 'sell'
         if direction == 'buy':
-            price = self.give_amount / self.take_amount
+            price =self.take_amount / self.give_amount
             size = self.take_amount
         elif direction == 'sell':
-            price = self.take_amount / self.give_amount
+            price  =self.give_amount / self.take_amount
             size = self.give_amount
         else:
             raise ValueError
@@ -127,6 +127,7 @@ def print_orders():
 
 def print_trades():
     events = []
+    
     from_block = arguments.from_block
     if arguments.to_block == -1:
         to_block = contract.web3.eth.blockNumber
