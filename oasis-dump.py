@@ -15,6 +15,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+DAI_ADDR = '0x89d24a6b4ccb1b6faa2625fe562bdd9a23260359'
+WETH_ADDR = '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+
 import argparse
 import datetime
 import json
@@ -72,11 +75,25 @@ class LogTake:
                f" for {format_amount(self.give_amount)} [{self.buy_token}] (maker: {self.maker}, taker: {self.taker}," \
                f" timestamp: {datetime.datetime.fromtimestamp(self.timestamp).isoformat()})"
 
+    def trade_str(self, direction):
+        # direction == 'buy' or 'sell'
+        if direction == 'buy':
+            price = self.give_amount / self.take_amount
+            size = self.take_amount
+        elif direction == 'sell':
+            price = self.take_amount / self.give_amount
+            size = self.give_amount
+        else:
+            raise ValueError
+        return "{}".format(datetime.datetime.fromtimestamp(self.timestamp).isoformat()) +  " | {} | ".format(direction) + " | price: {}".format(price) + " | size: {}".format(size) + " | hash: {}".format(self.tx_hash)
+
 
 parser = argparse.ArgumentParser(prog='oasis-dump.py')
 parser.add_argument("--rpc-host", help="JSON-RPC host (default: `localhost')", default="localhost", type=str)
 parser.add_argument("--rpc-port", help="JSON-RPC port (default: `8545')", default=8545, type=int)
 parser.add_argument("contract", help="Ethereum address of the OasisDEX smart contract", type=str)
+parser.add_argument("--from-block", help="Starting block (default: 0)", default=0, type=int)
+parser.add_argument("--to-block", help="Ending block, -1 for last (default: -1)", default=-1, type=int)
 
 group = parser.add_mutually_exclusive_group(required=True)
 group.add_argument('--orders',action='store_true',help='Dumps the current state of the OasisDEX orderbook')
@@ -87,7 +104,6 @@ arguments = parser.parse_args()
 web3 = Web3(HTTPProvider(endpoint_uri=f"http://{arguments.rpc_host}:{arguments.rpc_port}"))
 abi = json.loads(pkg_resources.resource_string(__name__, 'SimpleMarket.abi'))
 contract = web3.eth.contract(abi=abi)(address=arguments.contract)
-
 
 def get_offer(offer_id: int):
     array = contract.call().offers(offer_id)
@@ -111,11 +127,19 @@ def print_orders():
 
 def print_trades():
     events = []
-    contract.pastEvents('LogTake', {'fromBlock': 0, 'toBlock': contract.web3.eth.blockNumber},
+    from_block = arguments.from_block
+    if arguments.to_block == -1:
+        to_block = contract.web3.eth.blockNumber
+    else:
+        to_block = arguments.to_block
+    contract.pastEvents('LogTake', {'fromBlock': from_block, 'toBlock': to_block},
                         lambda log: events.append(LogTake(log['transactionHash'], log['args']))).join()
 
     for event in events:
-        print(event)
+        if event.pay_token == DAI_ADDR and event.buy_token == WETH_ADDR:
+            print(event.trade_str('buy'))
+        elif event.pay_token == WETH_ADDR and event.buy_token == DAI_ADDR:
+            print(event.trade_str('sell'))
 
 
 if arguments.orders:
