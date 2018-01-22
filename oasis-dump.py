@@ -78,14 +78,14 @@ class LogTake:
     def trade_str(self, direction):
         # direction == 'buy' or 'sell'
         if direction == 'buy':
-            price =self.take_amount / self.give_amount
-            size = self.take_amount
+            price  = self.give_amount / self.take_amount
+            size = format_amount(self.take_amount)
         elif direction == 'sell':
-            price  =self.give_amount / self.take_amount
-            size = self.give_amount
+            price = self.take_amount / self.give_amount
+            size = format_amount(self.give_amount)
         else:
             raise ValueError
-        return "{}".format(datetime.datetime.fromtimestamp(self.timestamp).isoformat()) +  " | {} | ".format(direction) + " | price: {}".format(price) + " | size: {}".format(size) + " | hash: {}".format(self.tx_hash)
+        return "{}".format(datetime.datetime.fromtimestamp(self.timestamp).isoformat()) +  " | {}".format(direction) + " | price: {}".format(price) + " | size: {}".format(size) + " | {}".format(self.tx_hash)
 
 
 parser = argparse.ArgumentParser(prog='oasis-dump.py')
@@ -137,10 +137,11 @@ def print_trades():
                         lambda log: events.append(LogTake(log['transactionHash'], log['args']))).join()
 
     for event in events:
+        # counterintuitive logic:
         if event.pay_token == DAI_ADDR and event.buy_token == WETH_ADDR:
-            print(event.trade_str('buy'))
-        elif event.pay_token == WETH_ADDR and event.buy_token == DAI_ADDR:
             print(event.trade_str('sell'))
+        elif event.pay_token == WETH_ADDR and event.buy_token == DAI_ADDR:
+            print(event.trade_str('buy'))
 
 
 if arguments.orders:
